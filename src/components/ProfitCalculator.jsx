@@ -8,7 +8,7 @@ const GATEWAYS = [
         name: 'مدى',
         feePercent: 1.0,
         feeFixed: 1.0,
-        LogoComponent: () => <img src="/mada-logo.png" alt="Mada" className="h-10 w-auto object-contain" />
+        LogoComponent: () => <img src={`${import.meta.env.BASE_URL}mada-logo.png`} alt="Mada" className="h-10 w-auto object-contain" />
     },
     {
         id: 'visa',
@@ -17,38 +17,38 @@ const GATEWAYS = [
         feeFixed: 1.0,
         LogoComponent: () => (
             <div className="flex gap-1 items-center">
-                <img src="/visa-logo.png" alt="Visa" className="h-8 w-auto object-contain" />
+                <img src={`${import.meta.env.BASE_URL}visa-logo.png`} alt="Visa" className="h-8 w-auto object-contain" />
                 <MastercardLogo className="h-8 w-auto" />
             </div>
         )
     },
     {
-        id: 'apple',
+        id: 'applepay',
         name: 'Apple Pay',
         feePercent: 2.2,
         feeFixed: 1.0,
-        LogoComponent: () => <img src="/apple-pay-logo.png" alt="Apple Pay" className="h-10 w-auto object-contain" />
+        LogoComponent: () => <img src={`${import.meta.env.BASE_URL}apple-pay-logo.png`} alt="Apple Pay" className="h-10 w-auto object-contain" />
     },
     {
-        id: 'stc',
+        id: 'stcpay',
         name: 'STC Pay',
         feePercent: 1.7,
         feeFixed: 1.0,
-        LogoComponent: () => <img src="/stc-pay-logo.png" alt="STC Pay" className="h-10 w-auto object-contain" />
+        LogoComponent: () => <img src={`${import.meta.env.BASE_URL}stc-pay-logo.png`} alt="STC Pay" className="h-10 w-auto object-contain" />
     },
     {
         id: 'tabby',
         name: 'Tabby',
         feePercent: 6.99,
         feeFixed: 1.5,
-        LogoComponent: (props) => <TabbyLogo {...props} className="h-10 w-auto" />
+        LogoComponent: () => <TabbyLogo className="h-10 w-auto" />
     },
     {
         id: 'tamara',
         name: 'Tamara',
         feePercent: 6.99,
         feeFixed: 1.5,
-        LogoComponent: (props) => <TamaraLogo {...props} className="h-10 w-auto" />
+        LogoComponent: () => <TamaraLogo className="h-10 w-auto" />
     },
 ];
 
@@ -64,8 +64,8 @@ const CurrencySymbol = ({ className = "w-5 h-5", useCurrentColor = false }) => {
             <span
                 className={`inline-block align-middle bg-current ${className}`}
                 style={{
-                    maskImage: 'url("/saudi-riyal-symbol.png")',
-                    WebkitMaskImage: 'url("/saudi-riyal-symbol.png")',
+                    maskImage: `url("${import.meta.env.BASE_URL}saudi-riyal-symbol.png")`,
+                    WebkitMaskImage: `url("${import.meta.env.BASE_URL}saudi-riyal-symbol.png")`,
                     maskRepeat: 'no-repeat',
                     WebkitMaskRepeat: 'no-repeat',
                     maskPosition: 'center',
@@ -78,7 +78,7 @@ const CurrencySymbol = ({ className = "w-5 h-5", useCurrentColor = false }) => {
     }
     return (
         <img
-            src="/saudi-riyal-symbol.png"
+            src={`${import.meta.env.BASE_URL}saudi-riyal-symbol.png`}
             alt="SAR"
             className={`inline-block object-contain align-middle ${className}`}
         />
@@ -97,17 +97,21 @@ export default function ProfitCalculator() {
 
     // State to control results visibility
     const [showResults, setShowResults] = useState(false);
+    const [showRoas, setShowRoas] = useState(false);
 
     // Outputs
     const [results, setResults] = useState({
-        totalRevenue: 0,
-        totalCost: 0,
+        cost: 0,
+        shipping: 0,
+        extra: 0,
         gatewayFee: 0,
-        grossProfit: 0, // Profit before ads
+        cac: 0,
+        totalCost: 0,
         netProfit: 0,
         margin: 0,
-        roi: 0,
-        maxCac: 0      // Break-even CPA
+        roas: 0,
+        grossProfit: 0,
+        maxCac: 0
     });
 
     const handleCalculate = () => {
@@ -118,34 +122,28 @@ export default function ProfitCalculator() {
         const numCac = parseInput(cac);
 
         // Calculate Gateway Fee with VAT
-        // Fee = (SellingPrice * Percent + Fixed) * 1.15 (VAT)
-        const baseFee = (numSelling * (selectedGateway.feePercent / 100)) + selectedGateway.feeFixed;
-        const fee = baseFee * 1.15;
+        const fee = ((numSelling * selectedGateway.feePercent / 100) + selectedGateway.feeFixed) * 1.15;
 
-        // Costs BEFORE Ads
-        const costOfGoods = numCost + numShipping + numExtra + fee;
-
-        // Gross Profit (Profit per unit before marketing)
-        const grossProfit = numSelling - costOfGoods;
-
-        // Max CAC (Break-even CPA) - This is exactly the Gross Profit
+        const costOfGoods = numCost + numShipping + numExtra;
+        const grossProfit = numSelling - costOfGoods - fee;
         const maxCac = grossProfit;
 
-        // Total Cost including CAC
-        const totalCost = costOfGoods + numCac;
-
+        const totalCost = costOfGoods + numCac + fee;
         const netProfit = numSelling - totalCost;
         const margin = numSelling > 0 ? (netProfit / numSelling) * 100 : 0;
-        const roi = totalCost > 0 ? (netProfit / totalCost) * 100 : 0;
+        const roas = numCac > 0 ? numSelling / numCac : 0;
 
         setResults({
-            totalRevenue: numSelling,
-            totalCost,
+            cost: numCost,
+            shipping: numShipping,
+            extra: numExtra,
             gatewayFee: fee,
-            grossProfit,
+            cac: numCac,
+            totalCost,
             netProfit,
             margin,
-            roi,
+            roas,
+            grossProfit,
             maxCac
         });
         setShowResults(true);
@@ -267,9 +265,20 @@ export default function ProfitCalculator() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="flex items-center text-sm font-medium text-gray-700">
-                                <Megaphone className="w-4 h-4 ml-2 text-indigo-500" />
-                                تكلفة الاستحواذ (CAC)
+                            <label className="flex items-center justify-between text-sm font-medium text-gray-700">
+                                <div className="flex items-center">
+                                    <Megaphone className="w-4 h-4 ml-2 text-indigo-500" />
+                                    تكلفة الاستحواذ (CAC)
+                                </div>
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={showRoas}
+                                        onChange={(e) => setShowRoas(e.target.checked)}
+                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 ml-2"
+                                    />
+                                    <span className="text-xs text-gray-500">عرض ROAS</span>
+                                </label>
                             </label>
                             <div className="relative">
                                 <input
@@ -383,6 +392,14 @@ export default function ProfitCalculator() {
                                             {Math.max(0, results.maxCac).toFixed(2)} <CurrencySymbol />
                                         </span>
                                     </div>
+                                    {showRoas && (
+                                        <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                                            <span className="text-sm text-indigo-700 font-medium">عائد الحملة (ROAS)</span>
+                                            <span className="font-bold text-indigo-700 text-lg">
+                                                {results.roas.toFixed(2)}x
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {/* Profit Summary */}

@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+}
+
+/* Custom Gauge Animation */
+@keyframes gauge-fill {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: var(--gauge-value);
+  }
+}
+
+.gauge-bar {
+  transition: width 1s ease-out, background-color 0.5s ease;
+}
